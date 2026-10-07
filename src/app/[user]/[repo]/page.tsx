@@ -4,7 +4,7 @@ import { getRepo } from "@/lib/db";
 import { listFiles, listCommits, getDefaultBranch, getCommitCount, listBranches, repoExists, readFile } from "@/lib/git";
 import FileTree from "@/components/FileTree";
 import MarkdownView from "@/components/MarkdownView";
-import { GitBranch, GitCommitHorizontal, Code, BarChart3 } from "lucide-react";
+import { GitBranch, GitCommitHorizontal, Code, BarChart3, CircleDot } from "lucide-react";
 
 type Params = { user: string; repo: string };
 
@@ -37,6 +37,7 @@ export default async function RepoPage({ params }: { params: Promise<Params> }) 
 
   const tabs = [
     { label: "Code", href: `/${user}/${repo}`, icon: Code, active: true },
+    { label: "Issues", href: `/${user}/${repo}/issues`, icon: CircleDot },
     { label: "Commits", href: `/${user}/${repo}/commits`, icon: GitCommitHorizontal, count: commitCount },
     { label: "Insights", href: `/${user}/${repo}/insights`, icon: BarChart3 },
   ];

@@ -49,6 +49,34 @@ struct Db {
     repos: Vec<RepoRecord>,
     #[serde(rename = "nextId", default)]
     next_id: Option<serde_json::Value>,
+    #[serde(default)]
+    issues: Vec<Issue>,
+    #[serde(rename = "nextIssueId", default)]
+    next_issue_id: usize,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct Issue {
+    id: usize,
+    number: usize,
+    repo_user: String,
+    repo_name: String,
+    title: String,
+    body: String,
+    state: String,
+    labels: Vec<String>,
+    author: String,
+    created_at: String,
+    updated_at: String,
+    comments: Vec<IssueComment>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct IssueComment {
+    id: usize,
+    author: String,
+    body: String,
+    created_at: String,
 }
 
 fn read_db(state: &AppState) -> Db {
@@ -684,6 +712,247 @@ async fn get_contributions(
     Json(contributions).into_response()
 }
 
+// ── Issues API ──
+
+#[derive(Deserialize)]
+struct CreateIssueBody {
+    title: String,
+    body: Option<String>,
+    labels: Option<Vec<String>>,
+    author: Option<String>,
+}
+
+async fn list_issues(
+    State(state): State<Arc<AppState>>,
+    Path((user, repo)): Path<(String, String)>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> Json<Vec<Issue>> {
+    let db = read_db(&state);
+    let filter_state = params.get("state").map(|s| s.as_str()).unwrap_or("open");
+    let issues: Vec<Issue> = db.issues
+        .into_iter()
+        .filter(|i| i.repo_user == user && i.repo_name == repo)
+        .filter(|i| filter_state == "all" || i.state == filter_state)
+        .rev()
+        .collect();
+    Json(issues)
+}
+
+async fn get_issue(
+    State(state): State<Arc<AppState>>,
+    Path((user, repo, number)): Path<(String, String, usize)>,
+) -> Response {
+    let db = read_db(&state);
+    match db.issues.iter().find(|i| i.repo_user == user && i.repo_name == repo && i.number == number) {
+        Some(issue) => Json(issue.clone()).into_response(),
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+async fn create_issue(
+    State(state): State<Arc<AppState>>,
+    Path((user, repo)): Path<(String, String)>,
+    Json(body): Json<CreateIssueBody>,
+) -> Response {
+    if body.title.is_empty() {
+        return (StatusCode::BAD_REQUEST, "title required").into_response();
+    }
+
+    let mut db = read_db(&state);
+    let repo_exists = db.repos.iter().any(|r| r.user == user && r.name == repo);
+    if !repo_exists {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+
+    let repo_issue_count = db.issues.iter().filter(|i| i.repo_user == user && i.repo_name == repo).count();
+    db.next_issue_id += 1;
+    let now = chrono::Utc::now().to_rfc3339();
+    let issue = Issue {
+        id: db.next_issue_id,
+        number: repo_issue_count + 1,
+        repo_user: user,
+        repo_name: repo,
+        title: body.title,
+        body: body.body.unwrap_or_default(),
+        state: "open".into(),
+        labels: body.labels.unwrap_or_default(),
+        author: body.author.unwrap_or_else(|| "anonymous".into()),
+        created_at: now.clone(),
+        updated_at: now,
+        comments: Vec::new(),
+    };
+    db.issues.push(issue.clone());
+    write_db(&state, &db);
+
+    (StatusCode::CREATED, Json(issue)).into_response()
+}
+
+#[derive(Deserialize)]
+struct UpdateIssueBody {
+    title: Option<String>,
+    body: Option<String>,
+    state: Option<String>,
+    labels: Option<Vec<String>>,
+}
+
+async fn update_issue(
+    State(state): State<Arc<AppState>>,
+    Path((user, repo, number)): Path<(String, String, usize)>,
+    Json(body): Json<UpdateIssueBody>,
+) -> Response {
+    let mut db = read_db(&state);
+    let issue = db.issues.iter_mut().find(|i| i.repo_user == user && i.repo_name == repo && i.number == number);
+    match issue {
+        Some(issue) => {
+            if let Some(title) = body.title { issue.title = title; }
+            if let Some(b) = body.body { issue.body = b; }
+            if let Some(s) = body.state { issue.state = s; }
+            if let Some(l) = body.labels { issue.labels = l; }
+            issue.updated_at = chrono::Utc::now().to_rfc3339();
+            let updated = issue.clone();
+            write_db(&state, &db);
+            Json(updated).into_response()
+        }
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct CreateCommentBody {
+    body: String,
+    author: Option<String>,
+}
+
+async fn create_comment(
+    State(state): State<Arc<AppState>>,
+    Path((user, repo, number)): Path<(String, String, usize)>,
+    Json(body): Json<CreateCommentBody>,
+) -> Response {
+    let mut db = read_db(&state);
+    let issue = db.issues.iter_mut().find(|i| i.repo_user == user && i.repo_name == repo && i.number == number);
+    match issue {
+        Some(issue) => {
+            let comment = IssueComment {
+                id: issue.comments.len() + 1,
+                author: body.author.unwrap_or_else(|| "anonymous".into()),
+                body: body.body,
+                created_at: chrono::Utc::now().to_rfc3339(),
+            };
+            issue.comments.push(comment.clone());
+            issue.updated_at = chrono::Utc::now().to_rfc3339();
+            write_db(&state, &db);
+            (StatusCode::CREATED, Json(comment)).into_response()
+        }
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+// ── Search ──
+
+#[derive(Serialize)]
+struct SearchResult {
+    #[serde(rename = "type")]
+    kind: String,
+    repo_user: String,
+    repo_name: String,
+    path: Option<String>,
+    snippet: Option<String>,
+    line: Option<usize>,
+}
+
+#[derive(Deserialize)]
+struct SearchQuery {
+    q: Option<String>,
+}
+
+async fn search_handler(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<SearchQuery>,
+) -> Response {
+    let q = match &query.q {
+        Some(q) if !q.is_empty() => q.to_lowercase(),
+        _ => return Json(Vec::<SearchResult>::new()).into_response(),
+    };
+
+    let db = read_db(&state);
+    let mut results: Vec<SearchResult> = Vec::new();
+
+    for repo_record in &db.repos {
+        if repo_record.name.to_lowercase().contains(&q)
+            || repo_record.description.to_lowercase().contains(&q)
+        {
+            results.push(SearchResult {
+                kind: "repo".into(),
+                repo_user: repo_record.user.clone(),
+                repo_name: repo_record.name.clone(),
+                path: None,
+                snippet: if repo_record.description.is_empty() { None } else { Some(repo_record.description.clone()) },
+                line: None,
+            });
+        }
+
+        let r = match state.open_repo(&repo_record.user, &repo_record.name) {
+            Ok(r) => r,
+            Err(_) => continue,
+        };
+        let head = match r.head() {
+            Ok(h) => h,
+            Err(_) => continue,
+        };
+        let commit = match head.peel_to_commit() {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        let tree = match commit.tree() {
+            Ok(t) => t,
+            Err(_) => continue,
+        };
+
+        tree.walk(git2::TreeWalkMode::PreOrder, |dir, entry| {
+            if results.len() >= 50 { return git2::TreeWalkResult::Abort; }
+            if entry.kind() != Some(ObjectType::Blob) { return git2::TreeWalkResult::Ok; }
+            let name = entry.name().unwrap_or("");
+            let full_path = if dir.is_empty() { name.to_string() } else { format!("{}{}", dir, name) };
+
+            if name.to_lowercase().contains(&q) {
+                results.push(SearchResult {
+                    kind: "file".into(),
+                    repo_user: repo_record.user.clone(),
+                    repo_name: repo_record.name.clone(),
+                    path: Some(full_path.clone()),
+                    snippet: None,
+                    line: None,
+                });
+            }
+
+            if let Ok(obj) = entry.to_object(&r) {
+                if let Some(blob) = obj.as_blob() {
+                    if blob.size() < 512_000 && !blob.is_binary() {
+                        let content = String::from_utf8_lossy(blob.content());
+                        for (i, line) in content.lines().enumerate() {
+                            if results.len() >= 50 { break; }
+                            if line.to_lowercase().contains(&q) {
+                                results.push(SearchResult {
+                                    kind: "code".into(),
+                                    repo_user: repo_record.user.clone(),
+                                    repo_name: repo_record.name.clone(),
+                                    path: Some(full_path.clone()),
+                                    snippet: Some(line.trim().chars().take(200).collect()),
+                                    line: Some(i + 1),
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            git2::TreeWalkResult::Ok
+        }).ok();
+    }
+
+    Json(results).into_response()
+}
+
 async fn health() -> &'static str {
     "forge-server ok"
 }
@@ -721,6 +990,12 @@ async fn main() {
         .route("/api/repos/{user}/{repo}/commits/{sha}/stats", get(get_diff_stats))
         .route("/api/repos/{user}/{repo}/branches", get(list_branches))
         .route("/api/contributions/{user}", get(get_contributions))
+        .route("/api/repos/{user}/{repo}/issues", get(list_issues))
+        .route("/api/repos/{user}/{repo}/issues", post(create_issue))
+        .route("/api/repos/{user}/{repo}/issues/{number}", get(get_issue))
+        .route("/api/repos/{user}/{repo}/issues/{number}", axum::routing::patch(update_issue))
+        .route("/api/repos/{user}/{repo}/issues/{number}/comments", post(create_comment))
+        .route("/api/search", get(search_handler))
         .layer(CorsLayer::permissive())
         .with_state(state);
 
