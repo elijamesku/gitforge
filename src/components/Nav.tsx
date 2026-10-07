@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Anvil, Settings, Search } from "lucide-react";
+import { Anvil, Settings, Search, Bell } from "lucide-react";
 
 export default function Nav() {
   const router = useRouter();
@@ -67,6 +67,15 @@ export default function Nav() {
                 /
               </kbd>
             </button>
+            <Link
+              href="/notifications"
+              className="relative rounded-md p-1.5 text-foreground-muted transition-colors hover:text-foreground"
+            >
+              <Bell size={16} />
+              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand text-[8px] font-bold text-white">
+                3
+              </span>
+            </Link>
             <Link
               href="/settings"
               className="rounded-md p-1.5 text-foreground-muted transition-colors hover:text-foreground"

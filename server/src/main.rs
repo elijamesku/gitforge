@@ -53,6 +53,10 @@ struct Db {
     issues: Vec<Issue>,
     #[serde(rename = "nextIssueId", default)]
     next_issue_id: usize,
+    #[serde(default)]
+    pull_requests: Vec<PullRequest>,
+    #[serde(rename = "nextPrId", default)]
+    next_pr_id: usize,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -77,6 +81,23 @@ struct IssueComment {
     author: String,
     body: String,
     created_at: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct PullRequest {
+    id: usize,
+    number: usize,
+    repo_user: String,
+    repo_name: String,
+    title: String,
+    body: String,
+    state: String,
+    head_branch: String,
+    base_branch: String,
+    author: String,
+    created_at: String,
+    updated_at: String,
+    merged_at: Option<String>,
 }
 
 fn read_db(state: &AppState) -> Db {
@@ -847,6 +868,112 @@ async fn create_comment(
     }
 }
 
+// ── Pull Requests API ──
+
+#[derive(Deserialize)]
+struct CreatePrBody {
+    title: String,
+    body: Option<String>,
+    head_branch: String,
+    base_branch: Option<String>,
+    author: Option<String>,
+}
+
+async fn list_prs(
+    State(state): State<Arc<AppState>>,
+    Path((user, repo)): Path<(String, String)>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> Json<Vec<PullRequest>> {
+    let db = read_db(&state);
+    let filter_state = params.get("state").map(|s| s.as_str()).unwrap_or("open");
+    let prs: Vec<PullRequest> = db.pull_requests
+        .into_iter()
+        .filter(|p| p.repo_user == user && p.repo_name == repo)
+        .filter(|p| filter_state == "all" || p.state == filter_state)
+        .rev()
+        .collect();
+    Json(prs)
+}
+
+async fn get_pr(
+    State(state): State<Arc<AppState>>,
+    Path((user, repo, number)): Path<(String, String, usize)>,
+) -> Response {
+    let db = read_db(&state);
+    match db.pull_requests.iter().find(|p| p.repo_user == user && p.repo_name == repo && p.number == number) {
+        Some(pr) => Json(pr.clone()).into_response(),
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+async fn create_pr(
+    State(state): State<Arc<AppState>>,
+    Path((user, repo)): Path<(String, String)>,
+    Json(body): Json<CreatePrBody>,
+) -> Response {
+    if body.title.is_empty() {
+        return (StatusCode::BAD_REQUEST, "title required").into_response();
+    }
+
+    let mut db = read_db(&state);
+    let repo_pr_count = db.pull_requests.iter().filter(|p| p.repo_user == user && p.repo_name == repo).count();
+    let issue_count = db.issues.iter().filter(|i| i.repo_user == user && i.repo_name == repo).count();
+    db.next_pr_id += 1;
+    let now = chrono::Utc::now().to_rfc3339();
+    let pr = PullRequest {
+        id: db.next_pr_id,
+        number: repo_pr_count + issue_count + 1,
+        repo_user: user,
+        repo_name: repo,
+        title: body.title,
+        body: body.body.unwrap_or_default(),
+        state: "open".into(),
+        head_branch: body.head_branch,
+        base_branch: body.base_branch.unwrap_or_else(|| "main".into()),
+        author: body.author.unwrap_or_else(|| "anonymous".into()),
+        created_at: now.clone(),
+        updated_at: now,
+        merged_at: None,
+    };
+    db.pull_requests.push(pr.clone());
+    write_db(&state, &db);
+
+    (StatusCode::CREATED, Json(pr)).into_response()
+}
+
+#[derive(Deserialize)]
+struct UpdatePrBody {
+    title: Option<String>,
+    body: Option<String>,
+    state: Option<String>,
+}
+
+async fn update_pr(
+    State(state): State<Arc<AppState>>,
+    Path((user, repo, number)): Path<(String, String, usize)>,
+    Json(body): Json<UpdatePrBody>,
+) -> Response {
+    let mut db = read_db(&state);
+    let pr = db.pull_requests.iter_mut().find(|p| p.repo_user == user && p.repo_name == repo && p.number == number);
+    match pr {
+        Some(pr) => {
+            if let Some(title) = body.title { pr.title = title; }
+            if let Some(b) = body.body { pr.body = b; }
+            if let Some(s) = &body.state {
+                if s == "merged" && pr.state == "open" {
+                    pr.merged_at = Some(chrono::Utc::now().to_rfc3339());
+                }
+                pr.state = s.clone();
+            }
+            pr.updated_at = chrono::Utc::now().to_rfc3339();
+            let updated = pr.clone();
+            write_db(&state, &db);
+            Json(updated).into_response()
+        }
+        None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
 // ── Search ──
 
 #[derive(Serialize)]
@@ -995,6 +1122,10 @@ async fn main() {
         .route("/api/repos/{user}/{repo}/issues/{number}", get(get_issue))
         .route("/api/repos/{user}/{repo}/issues/{number}", axum::routing::patch(update_issue))
         .route("/api/repos/{user}/{repo}/issues/{number}/comments", post(create_comment))
+        .route("/api/repos/{user}/{repo}/pulls", get(list_prs))
+        .route("/api/repos/{user}/{repo}/pulls", post(create_pr))
+        .route("/api/repos/{user}/{repo}/pulls/{number}", get(get_pr))
+        .route("/api/repos/{user}/{repo}/pulls/{number}", axum::routing::patch(update_pr))
         .route("/api/search", get(search_handler))
         .layer(CorsLayer::permissive())
         .with_state(state);
