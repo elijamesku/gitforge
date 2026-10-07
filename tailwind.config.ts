@@ -40,6 +40,8 @@ const config: Config = {
           DEFAULT: "hsl(var(--warning))",
           muted: "hsl(var(--warning-muted))",
         },
+        "diff-add": "hsl(var(--diff-add))",
+        "diff-del": "hsl(var(--diff-del))",
       },
       borderColor: {
         DEFAULT: "hsl(var(--border-default))",

@@ -3,8 +3,8 @@ import type { DiffFile } from "@/lib/git";
 
 function StatusBadge({ status }: { status: DiffFile["status"] }) {
   const config = {
-    added: { bg: "bg-brand/15", text: "text-brand", label: "Added" },
-    deleted: { bg: "bg-destructive/15", text: "text-destructive", label: "Deleted" },
+    added: { bg: "bg-diff-add/15", text: "text-diff-add", label: "Added" },
+    deleted: { bg: "bg-diff-del/15", text: "text-diff-del", label: "Deleted" },
     modified: { bg: "bg-warning/15", text: "text-warning", label: "Modified" },
     renamed: { bg: "bg-blue-500/15", text: "text-blue-400", label: "Renamed" },
   }[status];
@@ -24,14 +24,14 @@ function DiffStat({ additions, deletions }: { additions: number; deletions: numb
 
   return (
     <span className="flex items-center gap-1.5 font-mono text-[10px]">
-      <span className="text-brand">+{additions}</span>
-      <span className="text-destructive">-{deletions}</span>
+      <span className="text-diff-add">+{additions}</span>
+      <span className="text-diff-del">-{deletions}</span>
       <span className="flex gap-px">
         {Array.from({ length: addBlocks }, (_, i) => (
-          <span key={`a${i}`} className="h-1.5 w-1.5 rounded-sm bg-brand" />
+          <span key={`a${i}`} className="h-1.5 w-1.5 rounded-sm bg-diff-add" />
         ))}
         {Array.from({ length: delBlocks }, (_, i) => (
-          <span key={`d${i}`} className="h-1.5 w-1.5 rounded-sm bg-destructive" />
+          <span key={`d${i}`} className="h-1.5 w-1.5 rounded-sm bg-diff-del" />
         ))}
       </span>
     </span>
@@ -52,9 +52,9 @@ export default function DiffView({ files }: { files: DiffFile[] }) {
         Showing{" "}
         <span className="font-medium text-foreground">{files.length} changed files</span>{" "}
         with{" "}
-        <span className="font-medium text-brand">{totalAdditions} additions</span>{" "}
+        <span className="font-medium text-diff-add">{totalAdditions} additions</span>{" "}
         and{" "}
-        <span className="font-medium text-destructive">{totalDeletions} deletions</span>
+        <span className="font-medium text-diff-del">{totalDeletions} deletions</span>
       </div>
 
       <div className="space-y-3">
@@ -86,19 +86,19 @@ export default function DiffView({ files }: { files: DiffFile[] }) {
                         const isAdd = line.type === "add";
                         const isDel = line.type === "delete";
                         const bgClass = isAdd
-                          ? "bg-brand/8"
+                          ? "bg-diff-add/8"
                           : isDel
-                            ? "bg-destructive/8"
+                            ? "bg-diff-del/8"
                             : "";
                         const textClass = isAdd
-                          ? "text-brand"
+                          ? "text-diff-add"
                           : isDel
-                            ? "text-destructive"
+                            ? "text-diff-del"
                             : "text-foreground-muted";
                         const gutterBg = isAdd
-                          ? "bg-brand/15 text-brand/50"
+                          ? "bg-diff-add/15 text-diff-add/50"
                           : isDel
-                            ? "bg-destructive/15 text-destructive/50"
+                            ? "bg-diff-del/15 text-diff-del/50"
                             : "text-foreground-muted/40";
 
                         return (

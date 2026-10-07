@@ -25,6 +25,9 @@
     --brand-muted: 24 80% 70%;
     --brand-subtle: 24 60% 95%;
 
+    --diff-add: 142 72% 42%;
+    --diff-del: 0 72% 51%;
+
     --destructive: 0 72% 51%;
     --destructive-muted: 0 50% 70%;
 
@@ -60,6 +63,9 @@
     --brand-muted: 24 60% 30%;
     --brand-subtle: 24 40% 12%;
 
+    --diff-add: 142 72% 42%;
+    --diff-del: 0 72% 51%;
+
     --destructive: 0 72% 51%;
     --destructive-muted: 0 40% 25%;
 
@@ -82,6 +88,89 @@
     background: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+}
+
+.prose-forge {
+  color: hsl(var(--foreground-light));
+  font-size: 14px;
+  line-height: 1.7;
+  max-width: none;
+}
+.prose-forge h1,
+.prose-forge h2,
+.prose-forge h3,
+.prose-forge h4 {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+.prose-forge h1 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid hsl(var(--border-default)); }
+.prose-forge h2 { font-size: 1.25em; padding-bottom: 0.25em; border-bottom: 1px solid hsl(var(--border-default)); }
+.prose-forge h3 { font-size: 1.1em; }
+.prose-forge h1:first-child,
+.prose-forge h2:first-child,
+.prose-forge h3:first-child { margin-top: 0; }
+.prose-forge p { margin: 0.75em 0; }
+.prose-forge a { color: hsl(var(--brand)); text-decoration: none; }
+.prose-forge a:hover { text-decoration: underline; }
+.prose-forge code {
+  background: hsl(var(--surface-200));
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: var(--font-geist-mono), monospace;
+}
+.prose-forge pre {
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+.prose-forge pre code {
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  color: hsl(var(--foreground-light));
+}
+.prose-forge ul,
+.prose-forge ol { padding-left: 1.5em; margin: 0.75em 0; }
+.prose-forge li { margin: 0.25em 0; }
+.prose-forge ul { list-style: disc; }
+.prose-forge ol { list-style: decimal; }
+.prose-forge blockquote {
+  border-left: 3px solid hsl(var(--border-default));
+  padding-left: 1em;
+  color: hsl(var(--foreground-muted));
+  margin: 1em 0;
+}
+.prose-forge table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 13px;
+}
+.prose-forge th,
+.prose-forge td {
+  border: 1px solid hsl(var(--border-default));
+  padding: 6px 12px;
+  text-align: left;
+}
+.prose-forge th {
+  background: hsl(var(--surface-100));
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+.prose-forge hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border-default));
+  margin: 1.5em 0;
+}
+.prose-forge img { max-width: 100%; border-radius: 8px; }
+.prose-forge input[type="checkbox"] {
+  margin-right: 0.5em;
+  accent-color: hsl(var(--brand));
 }
 
 input[type="range"]::-webkit-slider-thumb {

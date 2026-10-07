@@ -48,8 +48,8 @@ export default async function CommitPage({ params }: { params: Promise<Params> }
         </div>
         <div className="mt-2.5 flex gap-3 text-[10px] font-mono text-foreground-muted">
           <span>{stats.files} files changed</span>
-          <span className="text-brand">+{stats.additions}</span>
-          <span className="text-destructive">-{stats.deletions}</span>
+          <span className="text-diff-add">+{stats.additions}</span>
+          <span className="text-diff-del">-{stats.deletions}</span>
         </div>
       </div>
 

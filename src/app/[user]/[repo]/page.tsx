@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getRepo } from "@/lib/db";
 import { listFiles, listCommits, getDefaultBranch, getCommitCount, listBranches, repoExists, readFile } from "@/lib/git";
 import FileTree from "@/components/FileTree";
+import MarkdownView from "@/components/MarkdownView";
 import { GitBranch, GitCommitHorizontal, Code, BarChart3 } from "lucide-react";
 
 type Params = { user: string; repo: string };
@@ -124,9 +125,7 @@ git push -u origin main`}
                 </svg>
                 README.md
               </h3>
-              <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground-light">
-                {readmeContent}
-              </pre>
+              <MarkdownView content={readmeContent} />
             </div>
           )}
         </>
