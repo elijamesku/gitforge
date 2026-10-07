@@ -1,3 +1,85 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 5%;
+    --foreground-light: 0 0% 30%;
+    --foreground-lighter: 0 0% 50%;
+    --foreground-muted: 0 0% 65%;
+
+    --surface: 0 0% 98%;
+    --surface-100: 0 0% 96%;
+    --surface-200: 0 0% 94%;
+    --surface-300: 0 0% 90%;
+
+    --overlay: 0 0% 92%;
+    --overlay-hover: 0 0% 85%;
+
+    --border-default: 0 0% 88%;
+    --border-muted: 0 0% 92%;
+
+    --brand: 24 95% 53%;
+    --brand-muted: 24 80% 70%;
+    --brand-subtle: 24 60% 95%;
+
+    --destructive: 0 72% 51%;
+    --destructive-muted: 0 50% 70%;
+
+    --warning: 38 92% 50%;
+    --warning-muted: 38 70% 70%;
+
+    --graph-0: hsl(0 0% 92%);
+    --graph-1: hsl(24 60% 80%);
+    --graph-2: hsl(24 80% 65%);
+    --graph-3: hsl(24 90% 55%);
+    --graph-4: hsl(24 95% 50%);
+  }
+
+  .dark {
+    --background: 220 13% 5%;
+    --foreground: 0 0% 95%;
+    --foreground-light: 0 0% 70%;
+    --foreground-lighter: 0 0% 50%;
+    --foreground-muted: 0 0% 35%;
+
+    --surface: 220 13% 8%;
+    --surface-100: 220 13% 10%;
+    --surface-200: 220 13% 12%;
+    --surface-300: 220 13% 15%;
+
+    --overlay: 220 13% 14%;
+    --overlay-hover: 220 13% 18%;
+
+    --border-default: 220 13% 15%;
+    --border-muted: 220 13% 12%;
+
+    --brand: 24 95% 53%;
+    --brand-muted: 24 60% 30%;
+    --brand-subtle: 24 40% 12%;
+
+    --destructive: 0 72% 51%;
+    --destructive-muted: 0 40% 25%;
+
+    --warning: 38 92% 50%;
+    --warning-muted: 38 50% 25%;
+
+    --graph-0: hsl(220 13% 12%);
+    --graph-1: hsl(24 40% 18%);
+    --graph-2: hsl(24 60% 28%);
+    --graph-3: hsl(24 80% 40%);
+    --graph-4: hsl(24 95% 53%);
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border-default));
+  }
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}

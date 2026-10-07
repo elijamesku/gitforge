@@ -22,25 +22,25 @@ export default async function BlobPage({ params }: { params: Promise<Params> }) 
   const filename = breadcrumbs[breadcrumbs.length - 1];
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-6">
-        <h1 className="flex flex-wrap items-center gap-1 text-xl">
-          <Link href={`/${user}`} className="font-bold text-emerald-600 hover:underline dark:text-emerald-400">
+    <main className="mx-auto max-w-5xl px-4 py-6">
+      <div className="mb-5">
+        <h1 className="flex flex-wrap items-center gap-1 text-sm">
+          <Link href={`/${user}`} className="text-brand hover:underline">
             {user}
           </Link>
-          <span className="text-zinc-400">/</span>
-          <Link href={`/${user}/${repo}`} className="font-bold text-emerald-600 hover:underline dark:text-emerald-400">
+          <span className="text-foreground-muted">/</span>
+          <Link href={`/${user}/${repo}`} className="text-brand hover:underline">
             {repo}
           </Link>
           {breadcrumbs.map((segment, i) => (
             <span key={i} className="flex items-center gap-1">
-              <span className="text-zinc-400">/</span>
+              <span className="text-foreground-muted">/</span>
               {i === breadcrumbs.length - 1 ? (
-                <span className="font-semibold">{segment}</span>
+                <span className="font-semibold text-foreground">{segment}</span>
               ) : (
                 <Link
                   href={`/${user}/${repo}/tree/${breadcrumbs.slice(0, i + 1).join("/")}`}
-                  className="text-emerald-600 hover:underline dark:text-emerald-400"
+                  className="text-brand hover:underline"
                 >
                   {segment}
                 </Link>

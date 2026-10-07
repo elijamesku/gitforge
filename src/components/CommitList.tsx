@@ -1,22 +1,35 @@
+import Link from "next/link";
 import type { Commit } from "@/lib/git";
 
-export default function CommitList({ commits }: { commits: Commit[] }) {
+export default function CommitList({
+  commits,
+  user,
+  repo,
+}: {
+  commits: Commit[];
+  user: string;
+  repo: string;
+}) {
   return (
-    <div className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="divide-y divide-border rounded-lg border border-border bg-surface">
       {commits.map((commit) => (
-        <div key={commit.sha} className="flex items-start justify-between px-4 py-3">
+        <Link
+          key={commit.sha}
+          href={`/${user}/${repo}/commit/${commit.sha}`}
+          className="flex items-start justify-between px-4 py-3 transition-colors hover:bg-surface-100"
+        >
           <div className="min-w-0 flex-1">
-            <p className="truncate font-medium text-zinc-900 dark:text-zinc-100">
+            <p className="truncate text-xs font-medium text-foreground">
               {commit.message}
             </p>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-[10px] text-foreground-muted">
               {commit.author} committed {commit.relativeDate}
             </p>
           </div>
-          <code className="ml-4 shrink-0 rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+          <code className="ml-3 shrink-0 rounded bg-surface-200 px-1.5 py-0.5 font-mono text-[10px] text-foreground-lighter">
             {commit.shortSha}
           </code>
-        </div>
+        </Link>
       ))}
     </div>
   );

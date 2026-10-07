@@ -1,52 +1,95 @@
 import Link from "next/link";
 import { listRepos } from "@/lib/db";
+import { GitBranch, Eye, BarChart3 } from "lucide-react";
 
 export default async function Home() {
   const repos = await listRepos();
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-12">
-      <div className="mb-12 text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Your code, your forge.
-        </h1>
-        <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400">
-          A git forge built from scratch. Push, browse, collaborate.
-        </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <Link
-            href="/new"
-            className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
-          >
-            Create a repository
-          </Link>
+    <main>
+      <div className="relative overflow-hidden border-b border-border bg-surface">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-subtle via-transparent to-transparent" />
+        <div className="relative mx-auto max-w-6xl px-4 py-20 text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-subtle px-4 py-1.5 text-xs text-brand">
+            <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+            Built from scratch
+          </div>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+            Your code,{" "}
+            <span className="bg-gradient-to-r from-brand to-orange-400 bg-clip-text text-transparent">
+              your forge.
+            </span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-foreground-lighter">
+            A complete git forge built from the ground up. Smart HTTP protocol,
+            syntax highlighting, commit diffs, real-time insights.
+          </p>
+          <div className="mt-8 flex justify-center gap-3">
+            <Link
+              href="/new"
+              className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:brightness-110"
+            >
+              Create a repository
+            </Link>
+            <Link
+              href="/explore"
+              className="rounded-md border border-border bg-surface px-5 py-2 text-sm font-medium text-foreground-light transition-colors hover:bg-surface-200 hover:text-foreground"
+            >
+              Explore
+            </Link>
+          </div>
+
+          <div className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-8 text-left">
+            <div className="rounded-lg border border-border bg-surface/80 p-4">
+              <GitBranch size={18} className="mb-2 text-brand" />
+              <div className="text-sm font-medium text-foreground">Git Protocol</div>
+              <div className="mt-0.5 text-xs text-foreground-lighter">Smart HTTP push & pull</div>
+            </div>
+            <div className="rounded-lg border border-border bg-surface/80 p-4">
+              <Eye size={18} className="mb-2 text-brand" />
+              <div className="text-sm font-medium text-foreground">Syntax Highlighting</div>
+              <div className="mt-0.5 text-xs text-foreground-lighter">30+ languages via Shiki</div>
+            </div>
+            <div className="rounded-lg border border-border bg-surface/80 p-4">
+              <BarChart3 size={18} className="mb-2 text-brand" />
+              <div className="text-sm font-medium text-foreground">Insights</div>
+              <div className="mt-0.5 text-xs text-foreground-lighter">Activity dashboard</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {repos.length > 0 && (
-        <section>
-          <h2 className="mb-4 text-lg font-semibold">Recent repositories</h2>
-          <div className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
-            {repos.map((repo) => (
-              <Link
-                key={repo.id}
-                href={`/${repo.user}/${repo.name}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
-              >
-                <div>
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                    {repo.user}/{repo.name}
-                  </span>
+      <div className="mx-auto max-w-6xl px-4 py-10">
+        {repos.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-foreground-lighter">
+              Recent repositories
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {repos.map((repo) => (
+                <Link
+                  key={repo.id}
+                  href={`/${repo.user}/${repo.name}`}
+                  className="group rounded-lg border border-border bg-surface p-4 transition-colors hover:border-brand/40 hover:bg-surface-100"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-brand" />
+                    <span className="text-sm font-medium text-brand group-hover:underline">
+                      {repo.user}/{repo.name}
+                    </span>
+                  </div>
                   {repo.description && (
-                    <p className="mt-0.5 text-sm text-zinc-500">{repo.description}</p>
+                    <p className="mt-1.5 text-xs text-foreground-lighter line-clamp-2">{repo.description}</p>
                   )}
-                </div>
-                <span className="text-xs text-zinc-400">{repo.visibility}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+                  <div className="mt-3 text-[10px] font-mono uppercase text-foreground-muted">
+                    {repo.visibility}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </main>
   );
 }

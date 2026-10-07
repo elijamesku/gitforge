@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { listRepos } from "@/lib/db";
+import { getContributionData, getCommitCount } from "@/lib/git";
 import { notFound } from "next/navigation";
+import ContributionGraph from "@/components/ContributionGraph";
 
 type Params = { user: string };
 
@@ -12,34 +14,70 @@ export default async function UserPage({ params }: { params: Promise<Params> }) 
     notFound();
   }
 
+  const contributionData = await getContributionData(user);
+
+  const repoStats = await Promise.all(
+    repos.map(async (repo) => {
+      const commits = await getCommitCount(user, repo.name);
+      return { ...repo, commits };
+    })
+  );
+
+  const totalCommits = repoStats.reduce((sum, r) => sum + r.commits, 0);
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-lg font-bold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+      <div className="mb-8 flex items-start gap-5">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-orange-400 text-2xl font-bold text-white">
           {user[0].toUpperCase()}
         </div>
-        <h1 className="text-2xl font-bold">{user}</h1>
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">{user}</h1>
+          <div className="mt-1.5 flex gap-4 text-xs text-foreground-lighter">
+            <span>
+              <span className="font-medium text-foreground">{repos.length}</span>{" "}
+              {repos.length === 1 ? "repository" : "repositories"}
+            </span>
+            <span>
+              <span className="font-medium text-foreground">{totalCommits}</span>{" "}
+              {totalCommits === 1 ? "commit" : "commits"}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <h2 className="mb-3 text-sm font-medium text-zinc-500">Repositories</h2>
-      <div className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-800 dark:bg-zinc-900">
-        {repos.map((repo) => (
+      <div className="mb-8">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-foreground-lighter">
+          Contributions
+        </h2>
+        <ContributionGraph data={contributionData} />
+      </div>
+
+      <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-foreground-lighter">
+        Repositories
+      </h2>
+      <div className="grid gap-3 md:grid-cols-2">
+        {repoStats.map((repo) => (
           <Link
             key={repo.id}
             href={`/${repo.user}/${repo.name}`}
-            className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+            className="group rounded-lg border border-border bg-surface p-4 transition-colors hover:border-brand/40 hover:bg-surface-100"
           >
-            <div>
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-start justify-between">
+              <span className="text-sm font-medium text-brand group-hover:underline">
                 {repo.name}
               </span>
-              {repo.description && (
-                <p className="mt-0.5 text-sm text-zinc-500">{repo.description}</p>
-              )}
+              <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-mono uppercase text-foreground-muted">
+                {repo.visibility}
+              </span>
             </div>
-            <span className="rounded-full border border-zinc-200 px-2 py-0.5 text-xs text-zinc-500 dark:border-zinc-700">
-              {repo.visibility}
-            </span>
+            {repo.description && (
+              <p className="mt-1.5 text-xs text-foreground-lighter line-clamp-2">{repo.description}</p>
+            )}
+            <div className="mt-3 flex items-center gap-2 text-[10px] text-foreground-muted">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand" />
+              {repo.commits} commits
+            </div>
           </Link>
         ))}
       </div>
