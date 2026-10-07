@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Anvil } from "lucide-react";
+import { Anvil, Settings } from "lucide-react";
 
 export default function Nav() {
   return (
@@ -21,6 +21,12 @@ export default function Nav() {
           <div className="hidden rounded-md border border-border bg-surface-100 px-3 py-1 text-xs text-foreground-muted sm:block">
             Search or jump to...
           </div>
+          <Link
+            href="/settings"
+            className="rounded-md p-1.5 text-foreground-muted transition-colors hover:text-foreground"
+          >
+            <Settings size={16} />
+          </Link>
           <Link
             href="/new"
             className="rounded-md bg-brand px-3 py-1 text-xs font-medium text-white transition-colors hover:brightness-110"
